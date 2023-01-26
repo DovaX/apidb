@@ -8,13 +8,14 @@ Use the package manager [pip](https://pip.pypa.io/en/stable/) to install apidb.
 ```bash
 pip install apidb
 ```
-from fastapi import FastAPI
-import apidb.apidb_core as ad
-import uvicorn
+
 
 
 ## Usage
 ```python
+from fastapi import FastAPI
+import apidb.apidb_core as ad
+import uvicorn
 
 description = """
 This is your API
@@ -25,13 +26,10 @@ app = FastAPI(title="Example API",
     version="1.0.0",
     )
 
-
 db_api_dict={'workspaces':'read','nodes':['read','create','update','delete']}
 column_names=["workspace_name"]
 
-
 ad.initialize_fastapi(app, db_api_dict, column_names, mysql)
-
 
 @app.get("/api/v1/custom_workspaces")
 def get_workspaces():
@@ -39,7 +37,6 @@ def get_workspaces():
     Returns all workspaces
     """
     return {"workspaces": []}
-
 
 def run_api():
     uvicorn.run(app, host="0.0.0.0", port=8000)
