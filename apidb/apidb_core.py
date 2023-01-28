@@ -13,9 +13,9 @@ from fastapi import FastAPI
 # """
 
 # app = FastAPI(title="Example API",
-#     description=description,
-#     version="1.0.0",
-#     )
+#               description=description,
+#      version="1.0.0",
+#      )
 
 
 
@@ -38,7 +38,7 @@ class CustomEndpoint:
         
     def initialize_custom_endpoint(self):
         if 'read' in self.operation:
-            @app.get(self.api_url+self.name)
+            @self.app.get(self.api_url+self.name)
             @rename_function('read_all_'+self.name)
             def read_all_x():
                 result=self.function() 
@@ -46,7 +46,7 @@ class CustomEndpoint:
     
         if 'create' in self.operation:
             item=self.name[:-1]
-            @app.post("/api/"+self.name[:-1])
+            @self.app.post("/api/"+self.name[:-1])
             @rename_function('create_'+item)
             def add_item():
                 result=self.function()
@@ -54,7 +54,7 @@ class CustomEndpoint:
             
         if 'update' in self.operation:
             item=self.name[:-1]
-            @app.put("/api/"+self.name[:-1]+"/<id>")
+            @self.app.put("/api/"+self.name[:-1]+"/<id>")
             @rename_function('update_'+item)
             def update_item():
                 result=self.function()
@@ -62,7 +62,7 @@ class CustomEndpoint:
             
         if 'delete' in self.operation:
             item=self.name[:-1]
-            @app.delete("/api/"+self.name[:-1]+"/<id>")
+            @self.app.delete("/api/"+self.name[:-1]+"/<id>")
             @rename_function('delete_'+item)
             def delete_item():
                 result=self.function()
@@ -100,53 +100,57 @@ class CustomEndpoint:
     
 
 
-def get_all_workspaces():
+# def get_all_workspaces():
     
-    return([1,2,3])
+#     return([1,2,3])
 
-def get_all_nodes():
+# def get_all_nodes():
     
-    return([1,2,4,3])
+#     return([1,2,4,3])
 
 
 
-db_api_dict={'workspaces':('read',get_all_workspaces),
-             'nodes':['read','create','update','delete']}
+# db_api_dict={'workspaces':[('read',get_all_workspaces),'update'],
+#              'nodes':['read','create','update','delete']}
 
 
 
-for k,v in db_api_dict.items():
-    
-    operations=[]
-    if type(v)!=list:
-        operations.append(v)
-    else:
-        operations=v
-    #print(operations)
-    for i,operation in enumerate(operations):
-        if type(operation)==tuple:
-            print("A",operation)
-            
-            function=operation[1]
-            operation=operation[0]
-            
-            print("A",operation,function)
-        else:
-            function=lambda *x:print(*x)
-            
-            print("B",operation,function)
-    
-        #print(operation,function)
-        custom_endpoint=CustomEndpoint(app,k,operation,function)
-        custom_endpoint.initialize_custom_endpoint()
+def initialize_api_from_db_api_dict(app,db_api_dict):
+    for k,v in db_api_dict.items():
         
+        operations=[]
+        if type(v)!=list:
+            operations.append(v)
+        else:
+            operations=v
+        #print(operations)
+        for i,operation in enumerate(operations):
+            if type(operation)==tuple:
+                #print("A",operation)
+                
+                function=operation[1]
+                operation=operation[0]
+                
+                #print("A",operation,function)
+            else:
+                function=lambda *x:print(*x)
+                
+                #print("B",operation,function)
+        
+            #print(operation,function)
+            custom_endpoint=CustomEndpoint(app,k,operation,function)
+            custom_endpoint.initialize_custom_endpoint()
+            
+#initialize_api_from_db_api_dict(app)
 
 # custom_endpoint1=CustomEndpoint(app,"workspaces","read",get_all_workspaces)
 # custom_endpoint1.initialize_custom_endpoint()
 # custom_endpoint2=CustomEndpoint(app,"nodes","read",get_all_nodes)
 # custom_endpoint2.initialize_custom_endpoint()
-  
 
+
+  
+# import uvicorn
 
 # def run_api():
 #     uvicorn.run(app, host="0.0.0.0", port=8000)
