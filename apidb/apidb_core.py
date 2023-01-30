@@ -53,8 +53,8 @@ class CustomEndpoint:
                 return {"result":result}
     
         if 'create' in self.operation:
-            item=self.name[:-1]
-            @self.app.post("/api/"+self.name[:-1])
+            item=self.name
+            @self.app.post("/api/"+self.name)
             @rename_function('create_'+item)
             def add_item():
                 result=self.function()
@@ -72,6 +72,13 @@ class CustomEndpoint:
             item=self.name[:-1]
             @self.app.delete("/api/"+self.name[:-1]+"/<id>")
             @rename_function('delete_'+item)
+            def delete_item():
+                result=self.function()
+                return {"result":result}
+            
+        if 'delete_all' in self.operation:
+            @self.app.delete("/api/"+self.name)
+            @rename_function('delete_all_'+self.name)
             def delete_item():
                 result=self.function()
                 return {"result":result}
