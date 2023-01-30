@@ -35,12 +35,20 @@ class CustomEndpoint:
         self.function=function
         self.api_url=api_url
       
-        
+         
     def initialize_custom_endpoint(self):
-        if 'read' in self.operation:
+        if 'read_all' in self.operation:
             @self.app.get(self.api_url+self.name)
             @rename_function('read_all_'+self.name)
-            def read_all_x():
+            def read_all_items():
+                result=self.function() 
+                return {"result":result}
+        
+        if 'read' in self.operation:
+            item=self.name[:-1]
+            @self.app.get(self.api_url+self.name[:-1]+"/<id>")
+            @rename_function('read_'+item)
+            def read_item():
                 result=self.function() 
                 return {"result":result}
     
@@ -67,6 +75,7 @@ class CustomEndpoint:
             def delete_item():
                 result=self.function()
                 return {"result":result}
+    
     
         # if 'update' in self.operation:
         #     item=self.name[:-1]
