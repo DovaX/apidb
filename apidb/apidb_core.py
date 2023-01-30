@@ -28,17 +28,27 @@ def rename_function(new_name):
     return decorator
 
 class CustomEndpoint:
-    def __init__(self,app,name,operation,function,api_url="/api/"):
+    def __init__(self,app,name,operation,function,api_url="/api/",id_variable="id",show_method_tags=True,show_endpoint_tags=True):
         self.app=app
         self.name=name #should be in plural
         self.operation=operation
         self.function=function
         self.api_url=api_url
+        self.id_variable=id_variable
+        self.show_method_tags=show_method_tags
+        self.show_endpoint_tags=show_endpoint_tags
+        self.operation_method_tag_dict={"read_all":"get","read":"get","create":"post","delete":"delete","delete_all":"delete","update":"put"}
       
          
     def initialize_custom_endpoint(self):
+        tags=[]
+        if self.show_endpoint_tags:
+            tags+=[self.name.capitalize()+" Methods"]
+        if self.show_method_tags:
+            tags+=[self.operation_method_tag_dict[self.operation].capitalize()+" Methods"]
+    
         if 'read_all' in self.operation:
-            @self.app.get(self.api_url+self.name)
+            @self.app.get(self.api_url+self.name,tags=tags)
             @rename_function('read_all_'+self.name)
             def read_all_items():
                 result=self.function() 
@@ -46,7 +56,7 @@ class CustomEndpoint:
         
         if 'read' in self.operation:
             item=self.name[:-1]
-            @self.app.get(self.api_url+self.name[:-1]+"/<id>")
+            @self.app.get(self.api_url+self.name[:-1]+"/{"+self.id_variable+"}",tags=tags)
             @rename_function('read_'+item)
             def read_item():
                 result=self.function() 
@@ -54,7 +64,7 @@ class CustomEndpoint:
     
         if 'create' in self.operation:
             item=self.name
-            @self.app.post("/api/"+self.name)
+            @self.app.post(self.api_url+self.name,tags=tags)
             @rename_function('create_'+item)
             def add_item():
                 result=self.function()
@@ -62,7 +72,7 @@ class CustomEndpoint:
             
         if 'update' in self.operation:
             item=self.name[:-1]
-            @self.app.put("/api/"+self.name[:-1]+"/<id>")
+            @self.app.put(self.api_url+self.name[:-1]+"/{"+self.id_variable+"}",tags=tags)
             @rename_function('update_'+item)
             def update_item():
                 result=self.function()
@@ -70,14 +80,14 @@ class CustomEndpoint:
             
         if 'delete' in self.operation:
             item=self.name[:-1]
-            @self.app.delete("/api/"+self.name[:-1]+"/<id>")
+            @self.app.delete(self.api_url+self.name[:-1]+"/{"+self.id_variable+"}",tags=tags)
             @rename_function('delete_'+item)
             def delete_item():
                 result=self.function()
                 return {"result":result}
             
         if 'delete_all' in self.operation:
-            @self.app.delete("/api/"+self.name)
+            @self.app.delete(self.api_url+self.name,tags=tags)
             @rename_function('delete_all_'+self.name)
             def delete_item():
                 result=self.function()
@@ -131,7 +141,7 @@ class CustomEndpoint:
 
 
 
-def initialize_api_from_db_api_dict(app,db_api_dict):
+def initialize_api_from_db_api_dict(app,db_api_dict,api_url="/api/",id_variable="id"):
     for k,v in db_api_dict.items():
         
         operations=[]
@@ -154,7 +164,7 @@ def initialize_api_from_db_api_dict(app,db_api_dict):
                 #print("B",operation,function)
         
             #print(operation,function)
-            custom_endpoint=CustomEndpoint(app,k,operation,function)
+            custom_endpoint=CustomEndpoint(app,k,operation,function,api_url=api_url,id_variable=id_variable)
             custom_endpoint.initialize_custom_endpoint()
             
 #initialize_api_from_db_api_dict(app)
@@ -230,7 +240,7 @@ def initialize_fastapi(app,db_api_dict,column_names,mysql):
     
         if 'update' in v:
             item=k[:-1]
-            @app.put("/api/"+k+"/<id>")
+            @app.put("/api/"+k+"/{id}")
             @rename_function('update_'+item)
             def update_item(id,k=k): #k=k because of late binding - otherwise, it would assign all endpoints with the same k
                 cur = mysql.connection.cursor()
@@ -244,7 +254,7 @@ def initialize_fastapi(app,db_api_dict,column_names,mysql):
     
         if 'delete' in v:
             item=k[:-1]
-            @app.delete("/api/"+k+"/<id>")
+            @app.delete("/api/"+k+"/{id}")
             @rename_function('delete_'+item)
             def delete_item(id,k=k): #k=k because of late binding - otherwise, it would assign all endpoints with the same k
                 cur = mysql.connection.cursor()
