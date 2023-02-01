@@ -20,12 +20,26 @@ from fastapi import FastAPI
 
 
 
+
+
 # Generic part
 def rename_function(new_name):
     def decorator(f):
         f.__name__ = new_name
         return f
     return decorator
+
+
+def add_function_parameter(add_function_parameter):
+    def decorator(f):
+        
+        
+        
+        f.__name__ = add_function_parameter
+        return f
+    return decorator
+
+
 
 class CustomEndpoint:
     def __init__(self,app,name,operation,function,api_url="/api/",id_variable="id",show_method_tags=True,show_endpoint_tags=True):
@@ -47,46 +61,50 @@ class CustomEndpoint:
         if self.show_method_tags:
             tags+=[self.operation_method_tag_dict[self.operation].capitalize()+" Methods"]
     
-        if 'read_all' in self.operation:
+        if 'read_all'==self.operation:
             @self.app.get(self.api_url+self.name,tags=tags)
             @rename_function('read_all_'+self.name)
             def read_all_items():
                 result=self.function() 
                 return {"result":result}
         
-        if 'read' in self.operation:
+        if 'read'==self.operation:
             item=self.name[:-1]
             @self.app.get(self.api_url+self.name[:-1]+"/{"+self.id_variable+"}",tags=tags)
             @rename_function('read_'+item)
-            def read_item():
-                result=self.function() 
+            def read_item(uid): #TODO: generalize uid for any variable name
+                result=self.function(uid) 
                 return {"result":result}
     
-        if 'create' in self.operation:
+    
+        if 'create'==self.operation:
             item=self.name
             @self.app.post(self.api_url+self.name,tags=tags)
             @rename_function('create_'+item)
-            def add_item():
-                result=self.function()
+            def add_item(**kwargs):
+                result=self.function(kwargs)
                 return {"result":result}
             
-        if 'update' in self.operation:
+        if 'update'==self.operation:
             item=self.name[:-1]
             @self.app.put(self.api_url+self.name[:-1]+"/{"+self.id_variable+"}",tags=tags)
             @rename_function('update_'+item)
-            def update_item():
+            def update_item(uid):
                 result=self.function()
                 return {"result":result}
+        
             
-        if 'delete' in self.operation:
+        if 'delete'==self.operation:
             item=self.name[:-1]
             @self.app.delete(self.api_url+self.name[:-1]+"/{"+self.id_variable+"}",tags=tags)
             @rename_function('delete_'+item)
-            def delete_item():
+            def delete_item(uid):
                 result=self.function()
                 return {"result":result}
             
-        if 'delete_all' in self.operation:
+            
+            
+        if 'delete_all'==self.operation:
             @self.app.delete(self.api_url+self.name,tags=tags)
             @rename_function('delete_all_'+self.name)
             def delete_item():
