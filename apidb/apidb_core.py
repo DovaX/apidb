@@ -1,9 +1,6 @@
 from flask import jsonify, request
 
 
-
-
-
 from fastapi import FastAPI
 
 
@@ -42,11 +39,12 @@ def add_function_parameter(add_function_parameter):
 
 
 class CustomEndpoint:
-    def __init__(self,app,name,operation,function,api_url="/api/",id_variable="id",show_method_tags=True,show_endpoint_tags=True):
+    def __init__(self,app,name,operation,function,body_template,api_url="/api/",id_variable="id",show_method_tags=True,show_endpoint_tags=True):
         self.app=app
         self.name=name #should be in plural
         self.operation=operation
         self.function=function
+        self.body_template = body_template
         self.api_url=api_url
         self.id_variable=id_variable
         self.show_method_tags=show_method_tags
@@ -56,6 +54,7 @@ class CustomEndpoint:
          
     def initialize_custom_endpoint(self):
         tags=[]
+        body_template = self.body_template
         if self.show_endpoint_tags:
             tags+=[self.name.capitalize()+" Methods"]
         if self.show_method_tags:
@@ -65,7 +64,7 @@ class CustomEndpoint:
             @self.app.get(self.api_url+self.name,tags=tags)
             @rename_function('read_all_'+self.name)
             def read_all_items():
-                result=self.function() 
+                result=self.function()
                 return {"result":result}
         
         if 'read'==self.operation:
@@ -81,16 +80,19 @@ class CustomEndpoint:
             item=self.name
             @self.app.post(self.api_url+self.name,tags=tags)
             @rename_function('create_'+item)
-            def add_item(**kwargs):
-                result=self.function(kwargs)
+            def add_item(structure:body_template):
+                params = [getattr(structure, field) for field in structure.dict().keys()]
+                result = self.function(params)
                 return {"result":result}
+                # return {}
             
         if 'update'==self.operation:
             item=self.name[:-1]
             @self.app.put(self.api_url+self.name[:-1]+"/{"+self.id_variable+"}",tags=tags)
             @rename_function('update_'+item)
-            def update_item(uid):
-                result=self.function()
+            def update_item(uid, body_template:body_template):
+                params = [uid] + [getattr(body_template, field) for field in body_template.dict().keys()]
+                result=self.function(params)
                 return {"result":result}
         
             
@@ -99,7 +101,7 @@ class CustomEndpoint:
             @self.app.delete(self.api_url+self.name[:-1]+"/{"+self.id_variable+"}",tags=tags)
             @rename_function('delete_'+item)
             def delete_item(uid):
-                result=self.function()
+                result=self.function(uid)
                 return {"result":result}
             
             
@@ -110,8 +112,7 @@ class CustomEndpoint:
             def delete_item():
                 result=self.function()
                 return {"result":result}
-    
-    
+
         # if 'update' in self.operation:
         #     item=self.name[:-1]
         #     @self.app.put("/api/"+self.name+"/<id>")
@@ -119,11 +120,11 @@ class CustomEndpoint:
         #     def update_item(id,name=self.name): #name=self.name because of late binding - otherwise, it would assign all endpoints with the same name
         #         cur = mysql.connection.cursor()
         #         column1 = request.get_json()[column_names[0]]
-                
+        #
         #         cur.execute("UPDATE "+self.name+" SET "+column_names[0]+" = '" + str(column1) + "' where id = " + id)
         #         mysql.connection.commit()
         #         result = {column_names[0]:column1}
-            
+        #
         #         return jsonify({"reuslt": result})
     
         # if 'delete' in self.operation:
@@ -171,9 +172,12 @@ def initialize_api_from_db_api_dict(app,db_api_dict,api_url="/api/",id_variable=
         for i,operation in enumerate(operations):
             if type(operation)==tuple:
                 #print("A",operation)
-                
+
+                body_template = operation[2]
                 function=operation[1]
                 operation=operation[0]
+
+
                 
                 #print("A",operation,function)
             else:
@@ -182,7 +186,7 @@ def initialize_api_from_db_api_dict(app,db_api_dict,api_url="/api/",id_variable=
                 #print("B",operation,function)
         
             #print(operation,function)
-            custom_endpoint=CustomEndpoint(app,k,operation,function,api_url=api_url,id_variable=id_variable)
+            custom_endpoint=CustomEndpoint(app,k,operation,function,body_template,api_url=api_url,id_variable=id_variable)
             custom_endpoint.initialize_custom_endpoint()
             
 #initialize_api_from_db_api_dict(app)
