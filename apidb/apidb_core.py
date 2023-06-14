@@ -80,8 +80,8 @@ class CustomEndpoint:
             item=self.name
             @self.app.post(self.api_url+self.name,tags=tags)
             @rename_function('create_'+item)
-            def add_item(structure:body_template):
-                params = [getattr(structure, field) for field in structure.dict().keys()]
+            def add_item(body_template:body_template):
+                params = [getattr(body_template, field) for field in body_template.dict().keys()]
                 result = self.function(params)
                 return {"result":result}
                 # return {}
@@ -177,8 +177,6 @@ def initialize_api_from_db_api_dict(app,db_api_dict,api_url="/api/",id_variable=
                 function=operation[1]
                 operation=operation[0]
 
-
-                
                 #print("A",operation,function)
             else:
                 function=lambda *x:print(*x)
