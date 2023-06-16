@@ -69,7 +69,7 @@ class CustomEndpoint:
         
         if 'read'==self.operation:
             item=self.name[:-1]
-            @self.app.get(self.api_url+self.name[:-1]+"/{"+self.id_variable+"}",tags=tags)
+            @self.app.get(self.api_url+item+"/{"+self.id_variable+"}",tags=tags)
             @rename_function('read_'+item)
             def read_item(uid): #TODO: generalize uid for any variable name
                 result=self.function(uid) 
@@ -77,8 +77,8 @@ class CustomEndpoint:
     
     
         if 'create'==self.operation:
-            item=self.name
-            @self.app.post(self.api_url+self.name,tags=tags)
+            item=self.name[:-1]
+            @self.app.post(self.api_url+item,tags=tags)
             @rename_function('create_'+item)
             def add_item(body_template:body_template):
                 params = [getattr(body_template, field) for field in body_template.dict().keys()]
@@ -88,7 +88,7 @@ class CustomEndpoint:
             
         if 'update'==self.operation:
             item=self.name[:-1]
-            @self.app.put(self.api_url+self.name[:-1]+"/{"+self.id_variable+"}",tags=tags)
+            @self.app.put(self.api_url+item+"/{"+self.id_variable+"}",tags=tags)
             @rename_function('update_'+item)
             def update_item(uid, body_template:body_template):
                 params = [uid] + [getattr(body_template, field) for field in body_template.dict().keys()]
@@ -98,7 +98,7 @@ class CustomEndpoint:
             
         if 'delete'==self.operation:
             item=self.name[:-1]
-            @self.app.delete(self.api_url+self.name[:-1]+"/{"+self.id_variable+"}",tags=tags)
+            @self.app.delete(self.api_url+item+"/{"+self.id_variable+"}",tags=tags)
             @rename_function('delete_'+item)
             def delete_item(uid):
                 result=self.function(uid)
