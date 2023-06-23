@@ -39,7 +39,7 @@ def add_function_parameter(add_function_parameter):
 
 
 class CustomEndpoint:
-    def __init__(self,app,name,operation,function,body_template,api_url="/api/",id_variable="id",show_method_tags=True,show_endpoint_tags=True):
+    def __init__(self,app,name,operation,function,body_template=None,api_url="/api/",id_variable="id",show_method_tags=True,show_endpoint_tags=True):
         self.app=app
         self.name=name #should be in plural
         self.operation=operation
@@ -77,9 +77,12 @@ class CustomEndpoint:
     
     
         if 'create'==self.operation:
+            if self.body_template is None:
+                print('Please specify body template for POST endpoint')
+                return
             item=self.name[:-1]
-            @self.app.post(self.api_url+item,tags=tags)
-            @rename_function('create_'+item)
+            @self.app.post(self.api_url+self.name,tags=tags)
+            @rename_function('create_'+self.name)
             def add_item(body_template:body_template):
                 params = [getattr(body_template, field) for field in body_template.dict().keys()]
                 result = self.function(params)
@@ -87,6 +90,9 @@ class CustomEndpoint:
                 # return {}
             
         if 'update'==self.operation:
+            if self.body_template is None:
+                print('Please specify body template for PUT endpoint')
+                return
             item=self.name[:-1]
             @self.app.put(self.api_url+item+"/{"+self.id_variable+"}",tags=tags)
             @rename_function('update_'+item)
@@ -173,7 +179,10 @@ def initialize_api_from_db_api_dict(app,db_api_dict,api_url="/api/",id_variable=
             if type(operation)==tuple:
                 #print("A",operation)
 
-                body_template = operation[2]
+                body_template = None
+                if len(operation) == 3:
+                    body_template = operation[2]
+
                 function=operation[1]
                 operation=operation[0]
 
@@ -184,7 +193,7 @@ def initialize_api_from_db_api_dict(app,db_api_dict,api_url="/api/",id_variable=
                 #print("B",operation,function)
         
             #print(operation,function)
-            custom_endpoint=CustomEndpoint(app,k,operation,function,body_template,api_url=api_url,id_variable=id_variable)
+            custom_endpoint=CustomEndpoint(app,k,operation,function,body_template=body_template,api_url=api_url,id_variable=id_variable)
             custom_endpoint.initialize_custom_endpoint()
             
 #initialize_api_from_db_api_dict(app)
